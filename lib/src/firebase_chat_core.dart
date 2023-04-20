@@ -316,6 +316,8 @@ class FirebaseChatCore {
         ? getFirebaseFirestore()
             .collection(config.roomsCollectionName)
             .where('userIds', arrayContains: fu.uid)
+            .where('metadata.lastMessageSent', isNull: false)
+            .orderBy('metadata.lastMessageSent', descending: true)
             .orderBy('updatedAt', descending: true)
         : getFirebaseFirestore()
             .collection(config.roomsCollectionName)
