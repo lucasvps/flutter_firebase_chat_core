@@ -324,13 +324,29 @@ class FirebaseChatCore {
             .where('userIds', arrayContains: fu.uid);
 
     return collection.snapshots().asyncMap(
-          (query) => processRoomsQuery(
-            fu,
-            getFirebaseFirestore(),
-            query,
-            config.usersCollectionName,
-          ),
+      (query) async {
+        final rooms = await processRoomsQuery(
+          fu,
+          getFirebaseFirestore(),
+          query,
+          config.usersCollectionName,
         );
+
+        // Filter the rooms based on the deletedTimes field
+        final filteredRooms = rooms.where(
+          (room) {
+            final deletedTime = room.metadata?['deletedTimes']?[fu.uid];
+            if (deletedTime == null) {
+              return true;
+            }
+
+            return deletedTime.millisecondsSinceEpoch < (room.updatedAt ?? 0);
+          },
+        ).toList();
+
+        return filteredRooms;
+      },
+    );
   }
 
   /// Sends a message to the Firestore. Accepts any partial message and a
